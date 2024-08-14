@@ -7,15 +7,11 @@ import { authRouter } from "./routes/auth.routes";
 
 const app = express();
 
-// Middleware to block direct access
-
 app.use(express.json());
-// do we need to set the origin to the proxy address?
 
 // Apply blockDirectAccess middleware to routes
 app.use(middlewares.blockDirectAccess);
 
-// Internal route handling
 app.use("/api", CarRouter);
 app.use("/user", UserRouter);
 app.use("/auth", authRouter);

@@ -7,12 +7,10 @@ import {
   OneToMany,
 } from "typeorm";
 import { Cars } from "./Cars";
+import { BaseClass } from "./BaseClass";
 
 @Entity()
-export class User {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
-
+export class User extends BaseClass {
   @Column()
   name: string;
 
@@ -27,8 +25,4 @@ export class User {
   verified: boolean;
   @OneToMany(() => Cars, (cars) => cars.user)
   cars: Cars[];
-  @CreateDateColumn()
-  createdAt: Date;
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

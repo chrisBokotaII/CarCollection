@@ -40,13 +40,18 @@ export class AuthController {
 
       if (!user.verified) {
         const msg = await this.twilio.sendVerificationCode(user.phone);
+        if (msg.status === "error") {
+          return res
+            .status(500)
+            .json({ message: "Error sending verification code" });
+        }
         return res.status(403).json({
           message: "Please verify your account with the verification code",
         });
       }
 
       const token = await jsonwebtoken.sign({ id: user.id });
-      cacheMemory.put(`user:${email}`, JSON.stringify(user), 30 * 60 * 1000); // Cache for 30 minutes
+      cacheMemory.put(`user:${email}`, JSON.stringify(user), 30 * 60 * 1000);
       return res.status(200).json({ token });
     } catch (error) {
       console.error("Error during login: ", error); // Better logging
@@ -61,17 +66,21 @@ export class AuthController {
       user.name = name;
       user.email = email;
       user.phone = phone;
-      user.password = await encrypt.encryptPassword(password); // Await if it's async
+      user.password = encrypt.encryptPassword(password); // Encrypt password
 
+      const sendingMsg = await this.twilio.sendVerificationCode(phone);
+      if (sendingMsg.status === "error") {
+        return res
+          .status(500)
+          .json({ message: "Error sending verification code" });
+      }
       await this.userRepo.save(user);
-      await this.twilio.sendVerificationCode(phone);
-
       cacheMemory.del(`user`);
       return res
         .status(201)
         .json({ message: "User created", data: user.phone });
     } catch (error) {
-      console.error("Error during registration: ", error); // Consistent logging
+      console.error("Error during registration: ", error);
       return res.status(500).json({ message: "Internal server error", error });
     }
   }

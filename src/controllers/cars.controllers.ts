@@ -5,15 +5,12 @@ import * as cache from "memory-cache";
 import { User } from "../entity/User";
 import { CarDto } from "../lib/app.dtos";
 
-// Setup cache client (consider using Redis for production)
 const cacheMemory = cache;
 
 export class CarsController {
-  // Repositories for Cars and User entities
   private static carRepo = AppDataSource.getRepository(Cars);
   private static userRepo = AppDataSource.getRepository(User);
 
-  // Fetch all cars, using cache if available
   static async getAllCars(req: Request, res: Response) {
     try {
       const fromCache = cacheMemory.get("cars");
@@ -25,7 +22,7 @@ export class CarsController {
       }
 
       const cars = await this.carRepo.find();
-      cacheMemory.put("cars", JSON.stringify(cars)); // Cache all cars
+      cacheMemory.put("cars", JSON.stringify(cars));
       return res.status(200).json({
         message: "Data from database",
         data: cars,
@@ -36,7 +33,6 @@ export class CarsController {
     }
   }
 
-  // Fetch car by ID, using cache if available
   static async getCarById(req: Request, res: Response) {
     const { carId } = req.params;
     try {
@@ -50,7 +46,7 @@ export class CarsController {
 
       const car = await this.carRepo.findOne({
         where: { id: carId },
-        relations: ["user"], // Load user relationship
+        relations: ["user"],
       });
       if (!car) {
         return res.status(404).json({ message: "Car not found" });
@@ -62,7 +58,7 @@ export class CarsController {
       carDto.car = results;
       carDto.owner = result;
 
-      cacheMemory.put(`car:${carId}`, JSON.stringify(carDto), 30 * 60 * 1000); // Cache specific car
+      cacheMemory.put(`car:${carId}`, JSON.stringify(carDto), 30 * 60 * 1000);
       return res.status(200).json({
         message: "Data from database",
         data: carDto,
@@ -73,7 +69,6 @@ export class CarsController {
     }
   }
 
-  // Create a new car entry
   static async createCar(req: Request, res: Response) {
     const { id } = req["current-user"];
     try {
@@ -92,7 +87,6 @@ export class CarsController {
         status,
       } = req.body;
 
-      // Validate data before proceeding
       if (!name || !brand || !model || !year || !fuel || !price) {
         return res.status(400).json({ message: "Missing required fields" });
       }
@@ -118,8 +112,7 @@ export class CarsController {
       car.user = user;
       await this.carRepo.save(car);
 
-      // Invalidate cache
-      cacheMemory.del("cars"); // Clear cars cache to update with the new car
+      cacheMemory.del("cars");
       return res.status(201).json({ message: "Car created" });
     } catch (error) {
       console.error("Error creating car:", error);
@@ -127,7 +120,6 @@ export class CarsController {
     }
   }
 
-  // Update an existing car entry
   static async updateCar(req: Request, res: Response) {
     const { carId } = req.params;
     const { id } = req["current-user"];
@@ -161,7 +153,6 @@ export class CarsController {
           .json({ message: "You are not authorized to update this car" });
       }
 
-      // Update car properties
       car.name = name;
       car.brand = brand;
       car.model = model;
@@ -176,10 +167,9 @@ export class CarsController {
       car.status = status;
       await this.carRepo.save(car);
 
-      // Invalidate cache
-      cacheMemory.del(`car:${carId}`); // Clear cache for this specific car
-      cacheMemory.del("cars"); // Optionally clear cars cache
-      cacheMemory.del(`user:${id}`); // Clear user cache if related data affects it
+      cacheMemory.del(`car:${carId}`);
+      cacheMemory.del("cars");
+      cacheMemory.del(`user:${id}`);
 
       return res.status(200).json({ message: "Car updated", car });
     } catch (error) {
@@ -188,14 +178,12 @@ export class CarsController {
     }
   }
 
-  // Delete a car entry
   static async deleteCar(req: Request, res: Response) {
     const { carId } = req.params;
     const { id } = req["current-user"];
     try {
       const car = await this.carRepo.findOne({
         where: { id: carId },
-        // Load user relationship
       });
       if (!car) {
         return res.status(404).json({ message: "Car not found" });
@@ -209,10 +197,9 @@ export class CarsController {
 
       await this.carRepo.delete(carId);
 
-      // Invalidate cache
-      cacheMemory.del(`car:${carId}`); // Clear cache for this specific car
-      cacheMemory.del("cars"); // Optionally clear cars cache
-      cacheMemory.del(`user:${id}`); // Clear user cache if related data affects it
+      cacheMemory.del(`car:${carId}`);
+      cacheMemory.del("cars");
+      cacheMemory.del(`user:${id}`);
       return res.status(200).json({ message: "Car deleted" });
     } catch (error) {
       console.error(`Error deleting car with id ${carId}:`, error);

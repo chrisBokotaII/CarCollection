@@ -9,7 +9,6 @@ const cacheMemory = cache;
 export class UserController {
   private static userRepo = AppDataSource.getRepository(User);
 
-  // Get all users with cache implementation
   static async getAllUsers(req: Request, res: Response) {
     try {
       const fromCache = cacheMemory.get("users");
@@ -28,7 +27,7 @@ export class UserController {
 
       const userRes = new usersDto();
       userRes.user = rem;
-      cacheMemory.put("users", JSON.stringify(users));
+      cacheMemory.put("users", JSON.stringify(userRes));
       return res
         .status(200)
         .json({ message: "Data from database", data: userRes });
@@ -38,7 +37,6 @@ export class UserController {
     }
   }
 
-  // Get a specific user with cache check
   static async getUser(req: Request, res: Response) {
     const { id } = req.params;
     try {
@@ -68,7 +66,6 @@ export class UserController {
     }
   }
 
-  // Update user and clear relevant cache entries
   static async updateUser(req: Request, res: Response) {
     const { id } = req["current-user"];
     const { name, email } = req.body;
@@ -86,13 +83,10 @@ export class UserController {
       user.email = email;
       await this.userRepo.save(user);
 
-      // Clear cache for this user
       cacheMemory.del(`user:${id}`);
 
-      // Clear cache for all users since one has changed
       cacheMemory.del("users");
 
-      // Clear cache for each car associated with this user
       user.cars.forEach((car) => cacheMemory.del(`car:${car.id}`));
 
       return res.status(200).json({ message: "User updated" });
@@ -117,16 +111,12 @@ export class UserController {
 
       await this.userRepo.remove(user);
 
-      // Clear cache for this user
       cacheMemory.del(`user:${id}`);
 
-      // Clear cache for all users since one has been removed
       cacheMemory.del("users");
 
-      // Clear cache for all cars since a user has been removed
       cacheMemory.del("cars");
 
-      // Clear cache for each car associated with this user
       user.cars.forEach((car) => cacheMemory.del(`car:${car.id}`));
 
       return res.status(200).json({ message: "User deleted" });

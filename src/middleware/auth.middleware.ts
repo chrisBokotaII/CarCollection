@@ -5,7 +5,7 @@ import { User } from "../entity/User";
 import { Ipayload } from "../lib/interfaces";
 import * as cache from "memory-cache";
 import { createHmac } from "crypto";
-const redisClient = cache;
+const cacheMemory = cache;
 
 export class middlewares {
   static async auth(req: Request, res: Response, next: NextFunction) {
@@ -21,10 +21,10 @@ export class middlewares {
         res.status(401).json({ message: "Unauthorized" });
       }
 
-      const fromRedis = redisClient.get(`User:${user.id}`);
-      if (fromRedis) {
-        console.log("reeeeedis");
-        req["current-user"] = JSON.parse(fromRedis);
+      const fromCache = cacheMemory.get(`User:${user.id}`);
+      if (fromCache) {
+        console.log("cache");
+        req["current-user"] = JSON.parse(fromCache);
         return next();
       }
 
@@ -35,7 +35,7 @@ export class middlewares {
         res.status(401).json({ message: "Unauthorized" });
       }
 
-      redisClient.put(`User:${user.id}`, JSON.stringify(user));
+      cacheMemory.put(`User:${user.id}`, JSON.stringify(user));
 
       req["current-user"] = user;
       next();

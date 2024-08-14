@@ -7,12 +7,10 @@ import {
   ManyToOne,
 } from "typeorm";
 import { User } from "./User";
+import { BaseClass } from "./BaseClass";
 
 @Entity()
-export class Cars {
-  @PrimaryGeneratedColumn("uuid")
-  id: string;
-
+export class Cars extends BaseClass {
   @Column()
   name: string;
 
@@ -44,9 +42,4 @@ export class Cars {
     onUpdate: "CASCADE",
   })
   user: User;
-
-  @CreateDateColumn()
-  createdAt: Date;
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

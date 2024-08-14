@@ -6,7 +6,7 @@ dotenv.config();
 export class jsonwebtoken {
   static async sign(payload: Ipayload) {
     return jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: process.env.JWT_EXPIRATION,
     });
   }
   static async verify(token: string): Promise<Ipayload> {
